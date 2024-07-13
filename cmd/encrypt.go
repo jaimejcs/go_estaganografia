@@ -1,23 +1,62 @@
 package cmd
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
-	"fmt"
 	"image"
 	"image/color"
 	"image/png"
+	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 var encrypt = &cobra.Command{
 	Use:   "encrypt",
-	Short: "Oculta a mensagem dentro da imagem",
-	Long:  "Oculta a mensagem dentro dos bits menos significativos do RGB da imagem",
+	Short: "Oculta a mensagem dentro da imagem <path/to/file>",
+	Long: `Oculta a mensagem dentro da imagem <path/to/file>
+			Exemplo: encrypt imagem.png -m 'Nosso segredo morre aqui' -o imagem_secreta.png`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("encrypt executado")
+		var input = args[0]
+		var mensagem = cmd.Flag("message").Value.String()
+		var output string
+
+		if output = cmd.Flag("output").Value.String(); len(strings.Trim(output, " ")) == 0 {
+			output = "out.png"
+		}
+
+		inFile, err := os.Open(input) // Opens input file provided in the flags
+		if err != nil {
+			panic(err)
+		}
+		defer inFile.Close()
+
+		reader := bufio.NewReader(inFile) // Reads binary data from picture file
+		img, _, err := image.Decode(reader)
+		if err != nil {
+			panic(err)
+		}
+		encodedImg := new(bytes.Buffer)
+		err = Encode(encodedImg, img, []byte(mensagem)) // Calls library and Encodes the message into a new buffer
+		if err != nil {
+			panic(err)
+		}
+		outFile, err := os.Create(output) // Creates file to write the message into
+		if err != nil {
+			panic(err)
+		}
+		bufio.NewWriter(outFile).Write(encodedImg.Bytes()) // writes file to disk
 	},
+}
+
+func init() {
+	encrypt.Flags().StringP("message", "m", "", "message to be encoded")
+	encrypt.MarkFlagRequired("message")
+	encrypt.Flags().StringP("output", "o", "", "path to the output .PNG file. Default value is out.png")
+
+	rootCmd.AddCommand(encrypt)
 }
 
 // EncodeNRGBA encodes a given string into the input image using least significant bit encryption (LSB steganography)
@@ -110,106 +149,4 @@ func Encode(writeBuffer *bytes.Buffer, pictureInputFile image.Image, message []b
 
 	return EncodeNRGBA(writeBuffer, rgbImage, message)
 
-}
-
-// MaxEncodeSize given an image will find how many bytes can be stored in that image using least significant bit encoding
-// ((width * height * 3) / 8 ) - 4
-// The result must be at least 4,
-func MaxEncodeSize(img image.Image) uint32 {
-	width := img.Bounds().Dx()
-	height := img.Bounds().Dy()
-	eval := ((width * height * 3) / 8) - 4
-	if eval < 4 {
-		eval = 0
-	}
-	return uint32(eval)
-}
-
-// GetMessageSizeFromImage gets the size of the message from the first four bytes encoded in the image
-func GetMessageSizeFromImage(pictureInputFile image.Image) (size uint32) {
-
-	sizeAsByteArray := decode(0, 4, pictureInputFile)
-	size = combineToInt(sizeAsByteArray[0], sizeAsByteArray[1], sizeAsByteArray[2], sizeAsByteArray[3])
-	return
-}
-
-// getNextBitFromString each call will return the next subsequent bit in the string
-func getNextBitFromString(byteArray []byte, ch chan byte) {
-
-	var offsetInBytes int
-	var offsetInBitsIntoByte int
-	var choiceByte byte
-
-	lenOfString := len(byteArray)
-
-	for {
-		if offsetInBytes >= lenOfString {
-			close(ch)
-			return
-		}
-
-		choiceByte = byteArray[offsetInBytes]
-		ch <- getBitFromByte(choiceByte, offsetInBitsIntoByte)
-
-		offsetInBitsIntoByte++
-
-		if offsetInBitsIntoByte >= 8 {
-			offsetInBitsIntoByte = 0
-			offsetInBytes++
-		}
-	}
-}
-
-// getLSB given a byte, will return the least significant bit of that byte
-func getLSB(b byte) byte {
-	if b%2 == 0 {
-		return 0
-	}
-	return 1
-}
-
-// setLSB given a byte will set that byte's least significant bit to a given value (where true is 1 and false is 0)
-func setLSB(b *byte, bit byte) {
-	if bit == 1 {
-		*b = *b | 1
-	} else if bit == 0 {
-		var mask byte = 0xFE
-		*b = *b & mask
-	}
-}
-
-// getBitFromByte given a bit will return a bit from that byte
-func getBitFromByte(b byte, indexInByte int) byte {
-	b = b << uint(indexInByte)
-	var mask byte = 0x80
-
-	var bit = mask & b
-
-	if bit == 128 {
-		return 1
-	}
-	return 0
-}
-
-// combineToInt given four bytes, will return the 32 bit unsigned integer which is the composition of those four bytes (one is MSB)
-func combineToInt(one, two, three, four byte) (ret uint32) {
-	ret = uint32(one)
-	ret = ret << 8
-	ret = ret | uint32(two)
-	ret = ret << 8
-	ret = ret | uint32(three)
-	ret = ret << 8
-	ret = ret | uint32(four)
-	return
-}
-
-// splitToBytes given an unsigned integer, will split this integer into its four bytes
-func splitToBytes(x uint32) (one, two, three, four byte) {
-	one = byte(x >> 24)
-	var mask uint32 = 255
-
-	two = byte((x >> 16) & mask)
-	three = byte((x >> 8) & mask)
-	four = byte(x & mask)
-	return
 }

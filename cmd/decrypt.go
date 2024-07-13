@@ -1,21 +1,57 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"image"
 	"image/color"
-	"image/draw"
+	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 var decrypt = &cobra.Command{
 	Use:   "encrypt",
-	Short: "Oculta a mensagem dentro da imagem",
-	Long:  "Oculta a mensagem dentro dos bits menos significativos do RGB da imagem",
+	Short: "Oculta a mensagem dentro da imagem <path/to/file>",
+	Long: `Oculta a mensagem dentro da imagem <path/to/file>
+			Exemplo: encrypt imagem.png -m 'Nosso segredo morre aqui' -o imagem_secreta.png`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("decrypt executado")
+		var input = args[0]
+		var output string
+
+		if output = cmd.Flag("output").Value.String(); len(strings.Trim(output, " ")) == 0 {
+			output = "out.png"
+		}
+
+		inFile, err := os.Open(input) // Opens input file provided in the flags
+		if err != nil {
+			panic(err)
+		}
+		defer inFile.Close()
+
+		reader := bufio.NewReader(inFile)
+		img, _, err := image.Decode(reader)
+		if err != nil {
+			panic(err)
+		}
+
+		sizeOfMessage := GetMessageSizeFromImage(img) // Uses the library to check the message size
+
+		msg := Decode(sizeOfMessage, img) // Read the message from the picture file
+
+		if len(msg) != 0 {
+			fmt.Println(string(msg))
+		} else {
+			fmt.Println("No message found")
+		}
 	},
+}
+
+func init() {
+	decrypt.Flags().StringP("output", "o", "", "path to the output .PNG file. Default value is out.png")
+
+	rootCmd.AddCommand(decrypt)
 }
 
 // decodeNRGBA gets messages from pictures using LSB steganography, decode the message from the picture and return it as a sequence of bytes
@@ -128,20 +164,4 @@ func decode(startOffset uint32, msgLen uint32, pictureInputFile image.Image) (me
 func Decode(msgLen uint32, pictureInputFile image.Image) (message []byte) {
 	return decode(4, msgLen, pictureInputFile) // the offset of 4 skips the "header" where message length is defined
 
-}
-
-// imageToNRGBA converts image.Image to image.NRGBA
-func imageToNRGBA(src image.Image) *image.NRGBA {
-	bounds := src.Bounds()
-
-	var m *image.NRGBA
-	var width, height int
-
-	width = bounds.Dx()
-	height = bounds.Dy()
-
-	m = image.NewNRGBA(image.Rect(0, 0, width, height))
-
-	draw.Draw(m, m.Bounds(), src, bounds.Min, draw.Src)
-	return m
 }
