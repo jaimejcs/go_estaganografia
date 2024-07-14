@@ -1,4 +1,4 @@
-module go_esteganografia
+module github.com/jaimejcs/go_esteganografia
 
 go 1.22.1
 
