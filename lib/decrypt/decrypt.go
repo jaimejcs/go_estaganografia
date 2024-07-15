@@ -3,6 +3,8 @@ package decrypt
 import (
 	"image"
 	"image/color"
+
+	"github.com/jaimejcs/go_esteganografia/common"
 )
 
 // decode gets messages from pictures using LSB steganography, decode the message from the picture and return it as a sequence of bytes
@@ -17,7 +19,7 @@ import (
 */
 func decode(startOffset uint32, msgLen uint32, pictureInputFile image.Image) (message []byte) {
 
-	rgbImage := common.imageToNRGBA(pictureInputFile)
+	rgbImage := common.ImageToNRGBA(pictureInputFile)
 	return decodeNRGBA(startOffset, msgLen, rgbImage)
 }
 
@@ -25,7 +27,7 @@ func decode(startOffset uint32, msgLen uint32, pictureInputFile image.Image) (me
 func GetMessageSizeFromImage(pictureInputFile image.Image) (size uint32) {
 
 	sizeAsByteArray := decode(0, 4, pictureInputFile)
-	size = common.combineToInt(sizeAsByteArray[0], sizeAsByteArray[1], sizeAsByteArray[2], sizeAsByteArray[3])
+	size = common.CombineToInt(sizeAsByteArray[0], sizeAsByteArray[1], sizeAsByteArray[2], sizeAsByteArray[3])
 	return
 }
 
@@ -58,8 +60,8 @@ func decodeNRGBA(startOffset uint32, msgLen uint32, rgbImage *image.NRGBA) (mess
 			c = rgbImage.NRGBAAt(x, y) // get the color of the pixel
 
 			/*  RED  */
-			lsb = common.getLSB(c.R)                                                    // get the least significant bit from the red component of this pixel
-			message[byteIndex] = common.setBitInByte(message[byteIndex], bitIndex, lsb) // add this bit to the message
+			lsb = common.GetLSB(c.R)                                                    // get the least significant bit from the red component of this pixel
+			message[byteIndex] = common.SetBitInByte(message[byteIndex], bitIndex, lsb) // add this bit to the message
 			bitIndex++
 
 			if bitIndex > 7 { // when we have filled up a byte, move on to the next byte
@@ -74,8 +76,8 @@ func decodeNRGBA(startOffset uint32, msgLen uint32, rgbImage *image.NRGBA) (mess
 			}
 
 			/*  GREEN  */
-			lsb = common.getLSB(c.G)
-			message[byteIndex] = common.setBitInByte(message[byteIndex], bitIndex, lsb)
+			lsb = common.GetLSB(c.G)
+			message[byteIndex] = common.SetBitInByte(message[byteIndex], bitIndex, lsb)
 			bitIndex++
 
 			if bitIndex > 7 {
@@ -91,8 +93,8 @@ func decodeNRGBA(startOffset uint32, msgLen uint32, rgbImage *image.NRGBA) (mess
 			}
 
 			/*  BLUE  */
-			lsb = common.getLSB(c.B)
-			message[byteIndex] = common.setBitInByte(message[byteIndex], bitIndex, lsb)
+			lsb = common.GetLSB(c.B)
+			message[byteIndex] = common.SetBitInByte(message[byteIndex], bitIndex, lsb)
 			bitIndex++
 
 			if bitIndex > 7 {

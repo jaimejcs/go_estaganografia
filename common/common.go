@@ -1,23 +1,9 @@
-package commonFunc
+package common
 
 import (
 	"image"
 	"image/draw"
 )
-
-// setBitInByte sets a specific bit in a byte to a given value and returns the new byte
-func setBitInByte(b byte, indexInByte uint32, bit byte) byte {
-	var mask byte = 0x80
-	mask = mask >> uint(indexInByte)
-
-	if bit == 0 {
-		mask = ^mask
-		b = b & mask
-	} else if bit == 1 {
-		b = b | mask
-	}
-	return b
-}
 
 // MaxEncodeSize given an image will find how many bytes can be stored in that image using least significant bit encoding
 // ((width * height * 3) / 8 ) - 4
@@ -32,8 +18,22 @@ func MaxEncodeSize(img image.Image) uint32 {
 	return uint32(eval)
 }
 
+// setBitInByte sets a specific bit in a byte to a given value and returns the new byte
+func SetBitInByte(b byte, indexInByte uint32, bit byte) byte {
+	var mask byte = 0x80
+	mask = mask >> uint(indexInByte)
+
+	if bit == 0 {
+		mask = ^mask
+		b = b & mask
+	} else if bit == 1 {
+		b = b | mask
+	}
+	return b
+}
+
 // getNextBitFromString each call will return the next subsequent bit in the string
-func getNextBitFromString(byteArray []byte, ch chan byte) {
+func GetNextBitFromString(byteArray []byte, ch chan byte) {
 
 	var offsetInBytes int
 	var offsetInBitsIntoByte int
@@ -48,7 +48,7 @@ func getNextBitFromString(byteArray []byte, ch chan byte) {
 		}
 
 		choiceByte = byteArray[offsetInBytes]
-		ch <- getBitFromByte(choiceByte, offsetInBitsIntoByte)
+		ch <- GetBitFromByte(choiceByte, offsetInBitsIntoByte)
 
 		offsetInBitsIntoByte++
 
@@ -60,7 +60,7 @@ func getNextBitFromString(byteArray []byte, ch chan byte) {
 }
 
 // getLSB given a byte, will return the least significant bit of that byte
-func getLSB(b byte) byte {
+func GetLSB(b byte) byte {
 	if b%2 == 0 {
 		return 0
 	}
@@ -68,7 +68,7 @@ func getLSB(b byte) byte {
 }
 
 // setLSB given a byte will set that byte's least significant bit to a given value (where true is 1 and false is 0)
-func setLSB(b *byte, bit byte) {
+func SetLSB(b *byte, bit byte) {
 	if bit == 1 {
 		*b = *b | 1
 	} else if bit == 0 {
@@ -78,7 +78,7 @@ func setLSB(b *byte, bit byte) {
 }
 
 // getBitFromByte given a bit will return a bit from that byte
-func getBitFromByte(b byte, indexInByte int) byte {
+func GetBitFromByte(b byte, indexInByte int) byte {
 	b = b << uint(indexInByte)
 	var mask byte = 0x80
 
@@ -91,7 +91,7 @@ func getBitFromByte(b byte, indexInByte int) byte {
 }
 
 // combineToInt given four bytes, will return the 32 bit unsigned integer which is the composition of those four bytes (one is MSB)
-func combineToInt(one, two, three, four byte) (ret uint32) {
+func CombineToInt(one, two, three, four byte) (ret uint32) {
 	ret = uint32(one)
 	ret = ret << 8
 	ret = ret | uint32(two)
@@ -103,7 +103,7 @@ func combineToInt(one, two, three, four byte) (ret uint32) {
 }
 
 // splitToBytes given an unsigned integer, will split this integer into its four bytes
-func splitToBytes(x uint32) (one, two, three, four byte) {
+func SplitToBytes(x uint32) (one, two, three, four byte) {
 	one = byte(x >> 24)
 	var mask uint32 = 255
 
@@ -114,7 +114,7 @@ func splitToBytes(x uint32) (one, two, three, four byte) {
 }
 
 // imageToNRGBA converts image.Image to image.NRGBA
-func imageToNRGBA(src image.Image) *image.NRGBA {
+func ImageToNRGBA(src image.Image) *image.NRGBA {
 	bounds := src.Bounds()
 
 	var m *image.NRGBA

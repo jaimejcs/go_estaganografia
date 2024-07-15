@@ -7,7 +7,7 @@ import (
 	"image/color"
 	"image/png"
 
-	"github.com/jaimejcs/go_esteganografia/lib/commonFunc"
+	"github.com/jaimejcs/go_esteganografia/common"
 )
 
 // EncodeNRGBA encodes a given string into the input image using least significant bit encryption (LSB steganography)
@@ -30,11 +30,11 @@ func EncodeNRGBA(writeBuffer *bytes.Buffer, rgbImage *image.NRGBA, message []byt
 	var bit byte
 	var ok bool
 	//var encodedImage image.Image
-	if commonFunc.MaxEncodeSize(rgbImage) < messageLength+4 {
+	if common.MaxEncodeSize(rgbImage) < messageLength+4 {
 		return errors.New("message too large for image")
 	}
 
-	one, two, three, four := commonFunc.splitToBytes(messageLength)
+	one, two, three, four := common.SplitToBytes(messageLength)
 
 	message = append([]byte{four}, message...)
 	message = append([]byte{three}, message...)
@@ -43,7 +43,7 @@ func EncodeNRGBA(writeBuffer *bytes.Buffer, rgbImage *image.NRGBA, message []byt
 
 	ch := make(chan byte, 100)
 
-	go commonFunc.getNextBitFromString(message, ch)
+	go common.GetNextBitFromString(message, ch)
 
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
@@ -57,7 +57,7 @@ func EncodeNRGBA(writeBuffer *bytes.Buffer, rgbImage *image.NRGBA, message []byt
 				rgbImage.SetNRGBA(x, y, c)
 				break
 			}
-			commonFunc.setLSB(&c.R, bit)
+			common.SetLSB(&c.R, bit)
 
 			/*  GREEN  */
 			bit, ok = <-ch
@@ -65,7 +65,7 @@ func EncodeNRGBA(writeBuffer *bytes.Buffer, rgbImage *image.NRGBA, message []byt
 				rgbImage.SetNRGBA(x, y, c)
 				break
 			}
-			commonFunc.setLSB(&c.G, bit)
+			common.SetLSB(&c.G, bit)
 
 			/*  BLUE  */
 			bit, ok = <-ch
@@ -73,7 +73,7 @@ func EncodeNRGBA(writeBuffer *bytes.Buffer, rgbImage *image.NRGBA, message []byt
 				rgbImage.SetNRGBA(x, y, c)
 				break
 			}
-			commonFunc.setLSB(&c.B, bit)
+			common.SetLSB(&c.B, bit)
 
 			rgbImage.SetNRGBA(x, y, c)
 		}
@@ -96,7 +96,7 @@ func EncodeNRGBA(writeBuffer *bytes.Buffer, rgbImage *image.NRGBA, message []byt
 */
 func Encode(writeBuffer *bytes.Buffer, pictureInputFile image.Image, message []byte) error {
 
-	rgbImage := commonFunc.imageToNRGBA(pictureInputFile)
+	rgbImage := common.ImageToNRGBA(pictureInputFile)
 
 	return EncodeNRGBA(writeBuffer, rgbImage, message)
 
