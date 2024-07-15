@@ -19,7 +19,7 @@ Exemplo: encrypt imagem.png -m 'Nosso segredo morre aqui' -o imagem_secreta.png`
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var input = args[0]
-		var mensagem = cmd.Flag("message").Value.String()
+		mensagem, _ := cmd.Flags().GetString("message")
 		var output string
 
 		if output = cmd.Flag("output").Value.String(); len(strings.TrimSpace(output)) == 0 {
@@ -51,9 +51,9 @@ Exemplo: encrypt imagem.png -m 'Nosso segredo morre aqui' -o imagem_secreta.png`
 }
 
 func init() {
+	rootCmd.AddCommand(encryptCmd)
+
 	encryptCmd.Flags().StringP("message", "m", "", "message to be encoded")
 	encryptCmd.MarkFlagRequired("message")
 	encryptCmd.Flags().StringP("output", "o", "", "path to the output .PNG file. Default value is out.png")
-
-	rootCmd.AddCommand(encryptCmd)
 }

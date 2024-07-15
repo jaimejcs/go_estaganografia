@@ -12,7 +12,7 @@ import (
 )
 
 var decryptCmd = &cobra.Command{
-	Use:   "encrypt",
+	Use:   "decrypt",
 	Short: "Exibe a mensagem dentro da imagem <path/to/file>",
 	Long: `Exibe a mensagem dentro da imagem <path/to/file>
 Exemplo: decrypt imagem.png`,
@@ -49,7 +49,5 @@ Exemplo: decrypt imagem.png`,
 }
 
 func init() {
-	decryptCmd.Flags().StringP("output", "o", "", "path to the output .PNG file. Default value is out.png")
-
 	rootCmd.AddCommand(decryptCmd)
 }
