@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"image"
 	"os"
-	"strings"
 
 	"github.com/jaimejcs/go_esteganografia/lib/decrypt"
 	"github.com/spf13/cobra"
@@ -18,11 +17,6 @@ var decryptCmd = &cobra.Command{
 Exemplo: decrypt imagem.png`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var input = args[0]
-		var output string
-
-		if output = cmd.Flag("output").Value.String(); len(strings.Trim(output, " ")) == 0 {
-			output = "out.png"
-		}
 
 		inFile, err := os.Open(input) // Opens input file provided in the flags
 		if err != nil {
